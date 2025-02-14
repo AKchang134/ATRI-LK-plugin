@@ -10,7 +10,7 @@ from apscheduler.triggers.combining import AndTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
 from ATRI.log import log
-from ATRI.service import Service
+from ATRI.service import Service, ServiceTools
 from ATRI.utils.apscheduler import scheduler
 
 from .data_source import ThesaurusManager, ThesaurusListener, ThesaurusStoragor
@@ -20,7 +20,7 @@ thes_listener = Service("词库监听").document("词库监听器").type(Service
 
 class ThesaurusLinstenerIsEnabledChecker(BaseTrigger):
     def get_next_fire_time(self, previous_fire_time, now):
-        conf = thes_listener.load_service("词库管理")
+        conf = ServiceTools("词库监听").load_service_config()
         if conf.get("enabled"):
             return now
 

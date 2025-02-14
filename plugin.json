@@ -79,7 +79,7 @@
     "词库管理": {
         "path": "plugins.thesaurus",
         "docs": "支持模糊匹配、全匹配、正则的自定义回复~\n支持分群、全局管理, 支持群内投票添加",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "author": "Kyomotoi",
         "is_dir": true
     },
@@ -107,7 +107,7 @@
     "每日新闻": {
         "path": "plugins.dailynews",
         "docs": "订阅每日新闻服务",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "author": "l_o_o_k",
         "is_dir": false
     },

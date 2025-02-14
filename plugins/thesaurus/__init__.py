@@ -18,7 +18,7 @@ plugin = (
     .document("支持模糊匹配、全匹配、正则的自定义回复~\n支持分群、全局管理, 支持群内投票添加")
     .main_cmd("/ts")
     .type(Service.ServiceType.FUNCTION)
-    .version("1.1.0")
+    .version("1.2.0")
 )
 tm = ThesaurusManager()
 

@@ -9,7 +9,6 @@ from nonebot.adapters.onebot.v11.helpers import Cooldown
 
 from ATRI import driver
 from ATRI.permission import ADMIN
-from ATRI.system.lkbot.util import PLUGIN_DIR
 from ATRI.service import Service
 from ATRI.utils.apscheduler import scheduler
 from ATRI.log import log
@@ -17,11 +16,10 @@ from ATRI.utils import request
 from ATRI.utils.model import BaseModel
 from ATRI.configs import PluginConfig
 
-plugin = Service("每日新闻").document("订阅每日新闻服务").type(Service.ServiceType.FUNCTION).version("1.1.0")
+plugin = Service("每日新闻").document("订阅每日新闻服务").type(Service.ServiceType.FUNCTION).version("1.1.1")
 
 url = "http://dwz.2xb.cn/zaob"
 _lmt_notice = ["慢...慢一..点❤", "冷静1下", "歇会歇会~~", "呜呜...别急", "太快了...受不了", "不要这么快呀"]
-DATA_PATH = f"{PLUGIN_DIR}/news_groups.json"
 
 
 class NewsGroupConfig(BaseModel):
