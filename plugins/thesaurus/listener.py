@@ -21,7 +21,7 @@ thes_listener = Service("词库监听").document("词库监听器").type(Service
 class ThesaurusLinstenerIsEnabledChecker(BaseTrigger):
     def get_next_fire_time(self, previous_fire_time, now):
         conf = ServiceTools("词库监听").load_service_config()
-        if conf.get("enabled"):
+        if conf.enabled:
             return now
 
 
