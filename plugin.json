@@ -141,5 +141,12 @@
         "author": "l_o_o_k",
         "is_dir": false,
         "res": ["res/text/tiangou.txt"]
+    },
+    "J漫画": {
+        "path": "plugins.jmcomic",
+        "docs": "发送J漫画",
+        "version": "0.1.0",
+        "author": "l_o_o_k",
+        "is_dir": true
     }
 }
