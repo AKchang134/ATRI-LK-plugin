@@ -1,10 +1,9 @@
-import json
-from datetime import datetime, timedelta, timezone as tz
+from datetime import datetime, timedelta, timezone as tz, UTC
 from operator import itemgetter
 
 from ATRI.message import MessageBuilder
 from ATRI.utils import TimeDealer
-from ATRI.exceptions import BilibiliDynamicError
+from ATRI.exceptions import BaseBotException
 from ATRI.database import DatabaseWrapper, add_database
 
 from . import model
@@ -13,13 +12,16 @@ from .model import BilibiliSubscription
 
 _OUTPUT_FORMAT = (
     MessageBuilder("{up_nickname} 的{up_dy_type}更新了!")
-    .text("(限制 {limit_content} 字)")
     .text("{up_dy_content}")
     .text("链接: {up_dy_link}")
     .done()
 )
 add_database("bilibili", model)
 DB = DatabaseWrapper(BilibiliSubscription)
+
+
+class BilibiliDynamicError(BaseBotException):
+    prompt = "b站动态订阅错误"
 
 
 class BilibiliDynamicSubscriptor:
@@ -58,79 +60,63 @@ class BilibiliDynamicSubscriptor:
         except Exception:
             raise BilibiliDynamicError("获取全部订阅列表失败")
 
-    async def __get_up_nickname(self, uid: int) -> str:
+    async def __get_up_nickname(self, uid: int) -> str | None:
         api = API(uid)
         resp = await api.get_user_info()
         data = resp.get("data", dict())
-        return data.get("name", "unknown")
+        return data.get('card', {}).get("name", None)
 
     async def get_up_recent_dynamic(self, uid: int) -> dict:
         api = API(uid)
         resp = await api.get_user_dynamics()
-        data = resp.get("data", dict())
-        if not data:
-            return dict()
-
-        if "cards" in data:
-            for card in data["cards"]:
-                card["card"] = json.loads(card["card"])
-                card["extend_json"] = json.loads(card["extend_json"])
+        data = resp.get("data", {})
         return data
 
     def extract_dyanmic(self, data: list) -> list:
         result = list()
         for i in data:
             pattern = {}
-            desc = i["desc"]
-            card = i["card"]
-            type = desc["type"]
+            models = i["modules"]
+            major = models['module_dynamic']["major"]
+            comment_type = i["basic"]["comment_type"]
+            author = models['module_author']
 
             # common 部分
-            pattern["type"] = desc["type"]
-            pattern["uid"] = desc["uid"]
-            pattern["view"] = desc["view"]
-            pattern["repost"] = desc["repost"]
-            pattern["like"] = desc["like"]
-            pattern["dynamic_id"] = desc["dynamic_id"]
-            pattern["timestamp"] = desc["timestamp"]
+            pattern["type"] = i['type']
+            pattern["uid"] = author["mid"]
+            pattern["timestamp"] = author['pub_ts']
             pattern["time"] = TimeDealer(
-                float(desc["timestamp"]), tz(timedelta(hours=8))
+                float(pattern["timestamp"]), tz(timedelta(hours=8))
             ).to_datetime()
             pattern["type_zh"] = str()
 
             # alternative 部分
             pattern["content"] = str()
-            pattern["pic"] = str()
+            pattern["pic"] = []
 
             # 根据type区分 提取content
-            if type == 1:  # 转发动态
-                pattern["type_zh"] = "转发动态"
-                pattern["content"] = card["item"]["content"]
-
-            elif type == 2:  # 普通动态（带多张图片）
-                pattern["type_zh"] = "普通动态（附图）"
-                pattern["content"] = card["item"]["description"]
-                if card["item"]["pictures_count"] > 0:
-                    if isinstance(card["item"]["pictures"][0], str):
-                        pattern["pic"] = card["item"]["pictures"][0]
-                    else:
-                        pattern["pic"] = card["item"]["pictures"][0]["img_src"]
-
-            elif type == 4:  # 普通动态（纯文字）
-                pattern["type_zh"] = "普通动态（纯文字）"
-                pattern["content"] = card["item"]["content"]
-                # 无图片
-
-            elif type == 8:  # 视频动态
+            if comment_type == 1:  # 视频动态
                 pattern["type_zh"] = "视频动态"
-                pattern["content"] = card["dynamic"] + "\n视频标题: " + card["title"]
-                pattern["pic"] = card["pic"]
-
-            elif type == 64:  # 文章
-                pattern["type_zh"] = "文章"
-                pattern["content"] = card["title"] + card["summary"]
-                if len(card["image_urls"]) > 0:
-                    pattern["pic"] = card["image_urls"][0]
+                archive = major["archive"]
+                pattern["content"] = "视频标题: " + archive['title'] + '\n' + archive['desc']
+                pattern["jump_url"] = 'https:' + archive['jump_url']
+                pattern["pic"] = [archive.get('cover', None)]
+            elif comment_type == 11:  # 普通动态
+                pattern["type_zh"] = "普通动态"
+                opus = major["opus"]
+                pattern["content"] = opus['summary']['text']
+                pattern["jump_url"] = 'https:' + opus['jump_url']
+                pattern['pic'] = opus['pics']
+            elif comment_type == 17:
+                pattern["type_zh"] = "转发动态"
+                opus = i['orig']["modules"]['module_dynamic']["major"]["opus"]
+                pattern['content'] = models['module_dynamic']['desc']['text'] + '\n转发的原文链接:https:' + opus[
+                    'jump_url']
+                pattern["jump_url"] = 'https://t.bilibili.com/' + i['id_str']
+            else:
+                pattern["type_zh"] = "未知类型动态"
+                pattern["content"] = "未知类型动态，请等待更新"
+                pattern["jump_url"] = 'https://t.bilibili.com/' + i.get('id_str', '')
 
             result.append(pattern)
         return sorted(result, key=itemgetter("timestamp"))
@@ -140,7 +126,7 @@ class BilibiliDynamicSubscriptor:
 
         Args:
             data (dict): dict形式的动态数据.
-            limit_content (int, optional): 内容字数限制.
+            content_limit (int, optional): 内容字数限制.
 
         Returns:
             str: 动态信息
@@ -153,11 +139,8 @@ class BilibiliDynamicSubscriptor:
         return _OUTPUT_FORMAT.format(
             up_nickname=data["name"],
             up_dy_type=data["type_zh"],
-            limit_content=content_limit,
-            up_dy_content=str(content)
-            .replace("https://", str())
-            .replace("http://", str()),
-            up_dy_link="https://t.bilibili.com/" + str(data["dynamic_id"]),
+            up_dy_content=str(content),
+            up_dy_link=data['jump_url'],
         )
 
     async def add_sub(self, uid: int, group_id: int) -> str:
@@ -173,7 +156,7 @@ class BilibiliDynamicSubscriptor:
         await self.update_sub(
             uid,
             group_id,
-            {"up_nickname": up_nickname, "last_update": datetime.utcnow()},
+            {"up_nickname": up_nickname, "last_update": datetime.now(UTC)},
         )
         return f"成功订阅名为 {up_nickname} up主的动态～！"
 

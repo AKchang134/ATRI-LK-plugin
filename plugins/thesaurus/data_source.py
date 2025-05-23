@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone as tz
 
 from ATRI.message import MessageBuilder
-from ATRI.exceptions import ThesaurusError
+from ATRI.exceptions import BaseBotException
 from ATRI.database import DatabaseWrapper, add_database
 
 from . import models
@@ -11,6 +11,10 @@ add_database("thesaurusstoragor", models)
 add_database("thesaurusauditlist", models)
 DBForTS = DatabaseWrapper(ThesaurusStoragor)
 DBForTAL = DatabaseWrapper(ThesaurusAuditList)
+
+
+class ThesaurusError(BaseBotException):
+    prompt = "词库相关错误"
 
 
 class ThesaurusManager:

@@ -24,14 +24,12 @@ from .model import RssRsshubSubcription
 
 sub = RssHubSubscriptor()
 
-plugin = (
-    Service("rss.rsshub")
-    .document("Rss的Rsshub支持")
-    .type(Service.ServiceType.SUBSCRIBE)
-    .permission(ADMIN)
-    .main_cmd("/rss.rsshub")
-    .version("1.1.0")
-)
+plugin = Service(
+    "rss.rsshub",
+    "Rss的Rsshub支持",
+    "1.1.1",
+    Service.ServiceType.SUBSCRIBE
+).permission(ADMIN).main_cmd("/rss.rsshub")
 
 add_sub = plugin.cmd_as_group("add", "为本群添加 RSSHub 订阅")
 
@@ -110,9 +108,10 @@ tq = asyncio.Queue()
 
 class RssHubDynamicChecker(BaseTrigger):
     def get_next_fire_time(self, previous_fire_time, now):
-        conf = plugin.load_service("rss.rsshub")
-        if conf.get("enabled"):
+        conf = plugin.conf()
+        if conf.enabled:
             return now
+        return None
 
 
 @scheduler.scheduled_job(

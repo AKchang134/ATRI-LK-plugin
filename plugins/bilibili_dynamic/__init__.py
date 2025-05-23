@@ -11,21 +11,25 @@ from nonebot import get_bot
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg, ArgPlainText
 from nonebot.permission import Permission
-from nonebot.adapters.onebot.v11 import Message, MessageSegment, GroupMessageEvent
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
 
 from ATRI.log import log
 from ATRI.service import Service
 from ATRI.utils import TimeDealer
 from ATRI.permission import MASTER, ADMIN
-from ATRI.utils.apscheduler import scheduler
+from ATRI.message import MessageBuilder
 
 from .data_source import BilibiliDynamicSubscriptor
 from .model import BilibiliSubscription
 
-__CONTENT_LIMIT = 0
+__CONTENT_LIMIT = 500
 
-plugin = Service("b站动态订阅").document("b站动态订阅助手~").type(Service.ServiceType.SUBSCRIBE).version(
-    "1.1.0").permission(ADMIN).main_cmd("/bd")
+plugin = Service(
+    "b站动态订阅",
+    "b站动态订阅助手~",
+    "1.2.0",
+    Service.ServiceType.SUBSCRIBE
+).permission(ADMIN).main_cmd("/bd")
 sub = BilibiliDynamicSubscriptor()
 
 add_sub = plugin.cmd_as_group("add", "添加b站up主订阅")
@@ -143,18 +147,13 @@ tq = asyncio.Queue()
 
 class BilibiliDynamicChecker(BaseTrigger):
     def get_next_fire_time(self, previous_fire_time, now):
-        conf = plugin.load_service("b站动态订阅")
-        if conf.get("enabled"):
+        conf = plugin.conf()
+        if conf.enabled:
             return now
+        return None
 
 
-@scheduler.scheduled_job(
-    AndTrigger([IntervalTrigger(seconds=10), BilibiliDynamicChecker()]),
-    name="b站动态更新检查",
-    max_instances=3,  # type: ignore
-    misfire_grace_time=60,  # type: ignore
-)
-async def _():
+async def bilibili_dynamic():
     try:
         all_dy = await sub.get_all_subs()
     except Exception:
@@ -164,41 +163,47 @@ async def _():
     if tq.empty():
         for i in all_dy:
             await tq.put(i)
-    else:
-        m: BilibiliSubscription = tq.get_nowait()
-        log.info(f"准备查询up主 {m.up_nickname} 的动态，队列剩余 {tq.qsize()}")
+    m: BilibiliSubscription = tq.get_nowait()
+    log.info(f"准备查询up主 {m.up_nickname} 的动态，队列剩余 {tq.qsize()}")
 
-        ts = m.last_update.timestamp()
-        info: dict = await sub.get_up_recent_dynamic(m.uid)
-        result = list()
-        if info.get("cards", list()):
-            result = sub.extract_dyanmic(info["cards"])
-        if not result:
-            log.warning(f"无法获取up主 {m.up_nickname} 的动态")
-            return
+    ts = m.last_update.timestamp()
+    info: dict = await sub.get_up_recent_dynamic(m.uid)
+    result = sub.extract_dyanmic(info.get("items", []))
+    if not result:
+        log.warning(f"无法获取up主 {m.up_nickname} 的动态")
+        return
 
-        for i in result:
-            i["name"] = m.up_nickname
-            if ts < i["timestamp"]:
-                content = sub.gen_output(i, __CONTENT_LIMIT)
-                _pic = i.get("pic", None)
-
-                bot = get_bot()
+    for i in result:
+        i["name"] = m.up_nickname
+        if ts < i["timestamp"]:
+            content = sub.gen_output(i, __CONTENT_LIMIT)
+            msg = MessageBuilder().text(content)
+            _pic = i['pic']
+            bot = get_bot()
+            await sub.update_sub(
+                m.uid,
+                m.group_id,
+                {
+                    "last_update": TimeDealer(
+                        float(i["timestamp"]), tz(timedelta(hours=8))
+                    ).to_datetime(),
+                },
+            )
+            for p in _pic:
+                if p is None:
+                    continue
+                msg.image(file=p['url'])
+            try:
+                await bot.send_group_msg(group_id=m.group_id, message=msg)
+            except Exception as e:
                 await bot.send_group_msg(group_id=m.group_id, message=content)
-                await sub.update_sub(
-                    m.uid,
-                    m.group_id,
-                    {
-                        "last_update": TimeDealer(
-                            float(i["timestamp"]), tz(timedelta(hours=8))
-                        ).to_datetime(),
-                    },
-                )
-                if _pic:
-                    pic = Message(MessageSegment.image(_pic))
-                    try:
-                        await bot.send_group_msg(group_id=m.group_id, message=pic)
-                    except Exception:
-                        repo = "图片发送失败了..."
-                        await bot.send_group_msg(group_id=m.group_id, message=repo)
-                break
+                raise e from e
+
+
+plugin.scheduler_jobs().add_job(
+    bilibili_dynamic,
+    "b站动态更新检查",
+    AndTrigger([IntervalTrigger(seconds=300), BilibiliDynamicChecker()]),
+    max_instances=3,  # type: ignore
+    misfire_grace_time=60,  # type: ignore
+)

@@ -9,8 +9,8 @@
     "b站动态订阅": {
         "path": "plugins.bilibili_dynamic",
         "docs": "b站动态订阅助手~",
-        "version": "1.1.0",
-        "author": "Kyomotoi",
+        "version": "1.2.0",
+        "author": "Kyomotoi,l_o_o_k",
         "is_dir": true
     },
     "棋类游戏": {
@@ -44,14 +44,14 @@
     "rss.mikan": {
         "path": "plugins.rss.rss_mikanan",
         "docs": "Rss的mikan支持",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "author": "Kyomotoi",
         "is_dir": true
     },
     "rss.rsshub": {
         "path": "plugins.rss.rss_rsshub",
         "docs": "Rss的Rsshub支持",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "author": "Kyomotoi",
         "is_dir": true
     },
@@ -79,7 +79,7 @@
     "词库管理": {
         "path": "plugins.thesaurus",
         "docs": "支持模糊匹配、全匹配、正则的自定义回复~\n支持分群、全局管理, 支持群内投票添加",
-        "version": "1.2.1",
+        "version": "1.2.2",
         "author": "Kyomotoi",
         "is_dir": true
     },
@@ -137,7 +137,7 @@
     "舔狗日记": {
         "path": "plugins.tiangou",
         "docs": "爱你无需多言(doge)",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "author": "l_o_o_k",
         "is_dir": false,
         "res": ["res/text/tiangou.txt"]

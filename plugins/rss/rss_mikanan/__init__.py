@@ -24,14 +24,12 @@ from .model import RssMikananiSubcription
 
 sub = RssMikananSubscriptor()
 
-plugin = (
-    Service("rss.mikan")
-    .document("Rss的mikan支持")
-    .type(Service.ServiceType.SUBSCRIBE)
-    .permission(ADMIN)
-    .main_cmd("/rss.mikan")
-    .version("1.1.0")
-)
+plugin = Service(
+    "rss.mikan",
+    "Rss的mikan支持",
+    "1.1.1",
+    Service.ServiceType.SUBSCRIBE
+).permission(ADMIN).main_cmd("/rss.mikan")
 
 add_sub = plugin.cmd_as_group("add", "为本群添加 Mikan 订阅")
 
@@ -109,9 +107,10 @@ tq = asyncio.Queue()
 
 class RssMikanDynamicChecker(BaseTrigger):
     def get_next_fire_time(self, previous_fire_time, now):
-        conf = plugin.load_service("rss.mikan")
-        if conf.get("enabled"):
+        conf = plugin.conf()
+        if conf.enabled:
             return now
+        return None
 
 
 @scheduler.scheduled_job(
