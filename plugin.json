@@ -100,14 +100,14 @@
     "coser": {
         "path": "plugins.coser",
         "docs": "三次元也不戳，嘿嘿嘿",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "author": "l_o_o_k",
         "is_dir": false
     },
     "每日新闻": {
         "path": "plugins.dailynews",
         "docs": "订阅每日新闻服务",
-        "version": "1.1.1",
+        "version": "1.2.0",
         "author": "l_o_o_k",
         "is_dir": false
     },

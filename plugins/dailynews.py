@@ -7,28 +7,37 @@ from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from nonebot.adapters.onebot.v11.helpers import Cooldown
 
-from ATRI import driver
 from ATRI.permission import ADMIN
 from ATRI.service import Service
-from ATRI.utils.apscheduler import scheduler
 from ATRI.log import log
 from ATRI.utils import request
 from ATRI.utils.model import BaseModel
 from ATRI.configs import PluginConfig
+from ATRI.exceptions import str_traceback
 
-plugin = Service("每日新闻").document("订阅每日新闻服务").type(Service.ServiceType.FUNCTION).version("1.1.1")
+plugin = Service(
+    "每日新闻",
+    "每日新闻与摸鱼日历相关的服务",
+    "1.2.0",
+    Service.ServiceType.FUNCTION
+)
 
-url = "http://dwz.2xb.cn/zaob"
+# url = "http://dwz.2xb.cn/zaob"
+url = 'https://api.southerly.top/api/60s?format=json'
+moyu = 'https://api.southerly.top/api/moyu'
 _lmt_notice = ["慢...慢一..点❤", "冷静1下", "歇会歇会~~", "呜呜...别急", "太快了...受不了", "不要这么快呀"]
 
 
-class NewsGroupConfig(BaseModel):
+class DailyNewsConfig(BaseModel):
     groups: List[str] = []
+    moyu: List[str] = []
+    hour: int = 8
+    minute: int = 0
 
 
-config_manage = PluginConfig("每日新闻", NewsGroupConfig)
+config_manage = PluginConfig(plugin.service, DailyNewsConfig)
 
-config: NewsGroupConfig = config_manage.config()
+config: DailyNewsConfig = config_manage.config()
 
 today_news = plugin.on_command(cmd='今日新闻', docs="查看今日新闻")
 
@@ -54,6 +63,22 @@ async def _(event: GroupMessageEvent):
         await news_sub.finish("本群每日新闻订阅已开启")
 
 
+moyu_sub = plugin.on_command(cmd="摸鱼日历订阅", docs="管理本群的摸鱼日历订阅", permission=ADMIN)
+
+
+@moyu_sub.handle()
+async def _(event: GroupMessageEvent):
+    group_id = str(event.group_id)
+    if group_id in config.moyu:
+        config.moyu.remove(group_id)
+        config_manage.change_config(config)
+        await moyu_sub.finish("本群摸鱼日历订阅已关闭")
+    else:
+        config.moyu.append(group_id)
+        config_manage.change_config(config)
+        await moyu_sub.finish("本群摸鱼日历新闻订阅已开启")
+
+
 async def daily_job():
     message = await get_news()
     for bot in get_bots().values():
@@ -63,9 +88,11 @@ async def daily_job():
                 group_id = str(group["group_id"])
                 if group_id in config.groups:
                     await bot.send_group_msg(group_id=group_id, message=Message().append(message))
+                if group_id in config.moyu:
+                    await bot.send_group_msg(group_id=group_id, message=Message().append(MessageSegment.image(file=moyu)))
 
 
-driver().on_startup(lambda: scheduler.add_job(daily_job, 'cron', hour=7, minute=0))
+plugin.scheduler_jobs().add_job(daily_job, "新闻订阅", 'cron', hour=config.hour, minute=config.minute)
 
 
 async def get_news() -> MessageSegment:
@@ -73,8 +100,9 @@ async def get_news() -> MessageSegment:
         resp = await request.get(url)
         resp.raise_for_status()
         url_json = resp.json()
-        image_url = str(url_json["imageUrl"])
+        # image_url = str(url_json["imageUrl"])
+        image_url = str(url_json["data"]["image"])
         return MessageSegment.image(file=image_url)
     except Exception as e:
-        log.error(f"{e}:{e.args}")
+        log.error(f"获取新闻错误:\n{str_traceback(e)}")
         return MessageSegment.text(text="很遗憾，获取今日新闻失败了捏")

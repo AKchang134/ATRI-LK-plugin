@@ -3,12 +3,12 @@ from operator import itemgetter
 
 from ATRI.message import MessageBuilder
 from ATRI.utils import TimeDealer
-from ATRI.exceptions import BaseBotException
 from ATRI.database import DatabaseWrapper, add_database
 
 from . import model
 from .api import API
 from .model import BilibiliSubscription
+from .exception import BilibiliDynamicError
 
 _OUTPUT_FORMAT = (
     MessageBuilder("{up_nickname} 的{up_dy_type}更新了!")
@@ -18,10 +18,6 @@ _OUTPUT_FORMAT = (
 )
 add_database("bilibili", model)
 DB = DatabaseWrapper(BilibiliSubscription)
-
-
-class BilibiliDynamicError(BaseBotException):
-    prompt = "b站动态订阅错误"
 
 
 class BilibiliDynamicSubscriptor:

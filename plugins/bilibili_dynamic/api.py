@@ -4,6 +4,9 @@ from playwright.async_api import async_playwright
 
 from ATRI.utils import request
 from ATRI.exceptions import RequestError
+from ATRI.log import log
+
+from .exception import BilibiliDynamicError
 
 
 class API:
@@ -41,7 +44,11 @@ class API:
             api_response_data = {}
 
             async def handle_response(response):
-                if "web-dynamic/v1/feed/space" in response.url and response.status == 200:
+                if "web-dynamic/v1/feed/space" in response.url:
+                    if response.status != 200:
+                        log.warning(f'请求失败:{response.status}')
+                    else:
+                        log.info('获取数据中...')
                     try:
                         json_data = await response.json()
                         api_response_data.update(json_data)
@@ -50,6 +57,13 @@ class API:
 
             page.on("response", handle_response)
             await page.goto(f"https://space.bilibili.com/{self.uid}/dynamic", timeout=60000)
-            await asyncio.sleep(30)
+            max_attempts = 20
+            for _ in range(max_attempts):
+                await page.mouse.wheel(0, 3000)
+                await asyncio.sleep(5)
+                if 'code' in api_response_data:
+                    break
             await browser.close()
+            if api_response_data.get("code") != 0:
+                raise BilibiliDynamicError(f'获取失败:{api_response_data.get("code")}')
             return api_response_data

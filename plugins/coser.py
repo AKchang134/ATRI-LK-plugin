@@ -10,8 +10,14 @@ from ATRI.service import Service
 from ATRI.log import log
 from ATRI.utils.img_editor import get_image_bytes
 from ATRI.utils import request
+from ATRI.exceptions import str_traceback
 
-plugin = Service("coser").document("三次元也不戳，嘿嘿嘿").type(Service.ServiceType.ENTERTAINMENT).version("1.0.1")
+plugin = Service(
+    "coser",
+    "三次元也不戳，嘿嘿嘿",
+    "1.0.2",
+    Service.ServiceType.ENTERTAINMENT
+)
 
 coser = plugin.on_regex(r"^(\d)?连?(cos|COS|coser|括丝)$",
                         docs="指令：\n?N连cos/coser\n示例：cos\n示例：5连cos （单次请求张数小于9）", priority=5, block=True)
@@ -42,5 +48,5 @@ async def get_coser():
         retry += 1
         if retry >= 5:
             await coser.send("出错了，你cos给我看！")
-            log.error(f"{e}:{e.args}")
+            log.error(f"获取图片错误:\n{str_traceback(e)}")
         await get_coser()

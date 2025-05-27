@@ -21,13 +21,14 @@ from ATRI.message import MessageBuilder
 
 from .data_source import BilibiliDynamicSubscriptor
 from .model import BilibiliSubscription
+from .exception import BilibiliDynamicError
 
-__CONTENT_LIMIT = 500
+__CONTENT_LIMIT = 1000
 
 plugin = Service(
     "b站动态订阅",
     "b站动态订阅助手~",
-    "1.2.0",
+    "1.2.1",
     Service.ServiceType.SUBSCRIBE
 ).permission(ADMIN).main_cmd("/bd")
 sub = BilibiliDynamicSubscriptor()
@@ -164,13 +165,17 @@ async def bilibili_dynamic():
         for i in all_dy:
             await tq.put(i)
     m: BilibiliSubscription = tq.get_nowait()
-    log.info(f"准备查询up主 {m.up_nickname} 的动态，队列剩余 {tq.qsize()}")
+    log.info(f"准备查询up主 {m.up_nickname}({m.uid}) 的动态，队列剩余 {tq.qsize()}")
 
     ts = m.last_update.timestamp()
-    info: dict = await sub.get_up_recent_dynamic(m.uid)
+    try:
+        info: dict = await sub.get_up_recent_dynamic(m.uid)
+    except BilibiliDynamicError as e:
+        log.error(e.prompt)
+        return
     result = sub.extract_dyanmic(info.get("items", []))
     if not result:
-        log.warning(f"无法获取up主 {m.up_nickname} 的动态")
+        log.warning(f"无法获取up主 {m.up_nickname}({m.uid}) 的动态")
         return
 
     for i in result:
@@ -204,6 +209,6 @@ plugin.scheduler_jobs().add_job(
     bilibili_dynamic,
     "b站动态更新检查",
     AndTrigger([IntervalTrigger(seconds=300), BilibiliDynamicChecker()]),
-    max_instances=3,  # type: ignore
-    misfire_grace_time=60,  # type: ignore
+    max_instances=3,
+    misfire_grace_time=60,
 )
