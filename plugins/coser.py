@@ -15,7 +15,7 @@ from ATRI.exceptions import str_traceback
 plugin = Service(
     "coser",
     "三次元也不戳，嘿嘿嘿",
-    "1.0.2",
+    "1.0.3",
     Service.ServiceType.ENTERTAINMENT
 )
 
@@ -36,17 +36,17 @@ async def _(reg_group: Tuple[Any, ...] = RegexGroup()):
 async def get_coser():
     path = TEMP_DIR / f"cos_cc{int(time.time())}.jpeg"
     retry = 0
-    try:
-        resp = await request.get(url)
-        resp.raise_for_status()
-        content = resp.content
-        async with aiofiles.open(path, "wb") as wf:
-            await wf.write(content)
-        await coser.send(MessageSegment.image(get_image_bytes(path)))
-    except Exception as e:
-        log.info(f"第{retry + 1}次失败")
-        retry += 1
-        if retry >= 5:
-            await coser.send("出错了，你cos给我看！")
-            log.error(f"获取图片错误:\n{str_traceback(e)}")
-        await get_coser()
+    while retry < 5:
+        try:
+            resp = await request.get(url)
+            resp.raise_for_status()
+            content = resp.content
+            async with aiofiles.open(path, "wb") as wf:
+                await wf.write(content)
+            await coser.send(MessageSegment.image(get_image_bytes(path)))
+        except Exception as e:
+            log.info(f"第{retry + 1}次失败")
+            retry += 1
+            if retry == 5:
+                log.error(f"获取图片错误:\n{str_traceback(e)}")
+    await coser.send("出错了，你cos给我看！")
