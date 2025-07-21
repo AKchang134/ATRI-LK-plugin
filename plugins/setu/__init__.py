@@ -2,7 +2,7 @@ import re
 from random import choice
 
 from nonebot.params import ArgPlainText
-from nonebot.adapters.onebot.v11 import Bot, MessageEvent, MessageSegment, ActionFailed
+from nonebot.adapters.onebot.v11 import Bot, MessageEvent, MessageSegment, ActionFailed, GroupMessageEvent
 from nonebot.adapters.onebot.v11.helpers import Cooldown
 
 from ATRI import IMG_DIR
@@ -12,7 +12,7 @@ from ATRI.system.lkbot.util import lk_util
 
 from .data_source import Setu
 
-plugin = Service("涩图").document("hso!").main_cmd("/setu").type(Service.ServiceType.ENTERTAINMENT).version("1.1.0")
+plugin = Service("涩图").document("hso!").main_cmd("/setu").type(Service.ServiceType.ENTERTAINMENT).version("1.1.1")
 
 random_setu = plugin.on_command(
     "来张涩图", "来张随机涩图，冷却2分钟", aliases={"涩图来", "来点涩图", "来份涩图"}, priority=5
@@ -21,7 +21,7 @@ random_setu = plugin.on_command(
 
 @random_setu.handle([Cooldown(120)])
 async def _(bot: Bot, event: MessageEvent):
-    if lk_util.is_safe_mode_group(event.group_id):
+    if isinstance(event, GroupMessageEvent) and lk_util.is_safe_mode_group(event.group_id):
         await random_setu.finish(MessageSegment.image(get_image_bytes(f'{IMG_DIR}/damiesese.jpg')))
     setu, setu_data = await Setu.new()
     setu_info = f"Title: {setu_data.title}\nPid: {setu_data.pid}"
@@ -49,7 +49,7 @@ tag_setu = plugin.on_regex(r"来[张点丶份](.*?)的?[涩色🐍]图", "根据
 
 @tag_setu.handle([Cooldown(120)])
 async def _(bot: Bot, event: MessageEvent):
-    if lk_util.is_safe_mode_group(event.group_id):
+    if isinstance(event, GroupMessageEvent) and  lk_util.is_safe_mode_group(event.group_id):
         await tag_setu.finish(MessageSegment.image(get_image_bytes(f'{IMG_DIR}/damiesese.jpg')))
     msg = str(event.get_message()).strip()
     pattern = r"来[张点丶份](.*?)的?[涩色🐍]图"
