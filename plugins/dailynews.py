@@ -8,6 +8,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment, Message
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from nonebot.adapters.onebot.v11.helpers import Cooldown
+from nonebot.exception import ActionFailed
 
 from ATRI import TEMP_DIR
 from ATRI.permission import ADMIN
@@ -22,7 +23,7 @@ from ATRI.exceptions import str_traceback
 plugin = Service(
     "每日新闻",
     "每日新闻与摸鱼日历相关的服务",
-    "1.4.0",
+    "1.4.1",
     Service.ServiceType.FUNCTION
 )
 
@@ -49,7 +50,10 @@ today_news = plugin.on_command(cmd='今日新闻', docs="查看今日新闻")
 @today_news.handle([Cooldown(60 * 60, prompt=choice(_lmt_notice))])
 async def _():
     _, news = await get_news(False)
-    await today_news.finish(news)
+    try:
+        await today_news.finish(news)
+    except ActionFailed:
+        await today_news.finish(MessageSegment.text(text="很遗憾，发送今日份新闻失败了捏"))
 
 
 today_moyu = plugin.on_command(cmd='摸鱼日历', docs="查看今日摸鱼日历")
@@ -57,7 +61,10 @@ today_moyu = plugin.on_command(cmd='摸鱼日历', docs="查看今日摸鱼日�
 
 @today_moyu.handle([Cooldown(60 * 60, prompt=choice(_lmt_notice))])
 async def _():
-    await today_moyu.finish(await get_moyu())
+    try:
+        await today_moyu.finish(await get_moyu())
+    except ActionFailed:
+        today_moyu.finish(MessageSegment.text(text="很遗憾，今日份的摸鱼日历发送失败了捏"))
 
 
 news_sub = plugin.on_command(cmd="每日新闻订阅", docs="管理本群的新闻订阅", permission=ADMIN)
@@ -101,9 +108,15 @@ async def daily_job():
             for group in group_list:
                 group_id = str(group["group_id"])
                 if group_id in config.groups:
-                    await bot.send_group_msg(group_id=group_id, message=Message().append(message))
+                    try:
+                        await bot.send_group_msg(group_id=group_id, message=Message().append(message))
+                    except ActionFailed:
+                        await bot.send_group_msg(group_id=group_id, message=MessageSegment.text(text="很遗憾，发送今日份新闻失败了捏"))
                 if group_id in config.moyu:
-                    await bot.send_group_msg(group_id=group_id, message=Message().append(mo_yu))
+                    try:
+                        await bot.send_group_msg(group_id=group_id, message=Message().append(mo_yu))
+                    except ActionFailed:
+                        await bot.send_group_msg(group_id=group_id, message=MessageSegment.text(text="很遗憾，今日份的摸鱼日历发送失败了捏"))
 
 
 async def send_daily_news():
