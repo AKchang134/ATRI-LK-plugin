@@ -12,21 +12,20 @@ from ATRI.system.lkbot.util import lk_util
 
 from .data_source import Setu
 
-plugin = Service("涩图").document("hso!").main_cmd("/setu").type(Service.ServiceType.ENTERTAINMENT).version("1.1.1")
+plugin = Service("涩图").document("hso!").main_cmd("/setu").type(Service.ServiceType.ENTERTAINMENT).version("1.1.2")
 
 random_setu = plugin.on_command(
     "来张涩图", "来张随机涩图，冷却2分钟", aliases={"涩图来", "来点涩图", "来份涩图"}, priority=5
 )
 
 
-@random_setu.handle([Cooldown(120)])
+@random_setu.handle([Cooldown(120, prompt="2分钟冷却中")])
 async def _(bot: Bot, event: MessageEvent):
     if isinstance(event, GroupMessageEvent) and lk_util.is_safe_mode_group(event.group_id):
         await random_setu.finish(MessageSegment.image(get_image_bytes(f'{IMG_DIR}/damiesese.jpg')))
     setu, setu_data = await Setu.new()
     setu_info = f"Title: {setu_data.title}\nPid: {setu_data.pid}"
     await bot.send(event, setu_info)
-
     try:
         await random_setu.send(setu)
         await random_setu.send(f"url: {setu_data.url}")
@@ -47,9 +46,9 @@ async def _(think: str = ArgPlainText("r_rush_after_think")):
 tag_setu = plugin.on_regex(r"来[张点丶份](.*?)的?[涩色🐍]图", "根据提供的tag查找涩图，冷却2分钟", priority=6)
 
 
-@tag_setu.handle([Cooldown(120)])
+@tag_setu.handle([Cooldown(120, prompt="2分钟冷却中")])
 async def _(bot: Bot, event: MessageEvent):
-    if isinstance(event, GroupMessageEvent) and  lk_util.is_safe_mode_group(event.group_id):
+    if isinstance(event, GroupMessageEvent) and lk_util.is_safe_mode_group(event.group_id):
         await tag_setu.finish(MessageSegment.image(get_image_bytes(f'{IMG_DIR}/damiesese.jpg')))
     msg = str(event.get_message()).strip()
     pattern = r"来[张点丶份](.*?)的?[涩色🐍]图"
@@ -57,7 +56,6 @@ async def _(bot: Bot, event: MessageEvent):
     setu, setu_data = await Setu.new(tag)
     if not setu_data.url:
         await tag_setu.finish("没有合适的涩图呢...")
-
     setu_info = f"Title: {setu_data.title}\nPid: {setu_data.pid}"
     await bot.send(event, setu_info)
 
