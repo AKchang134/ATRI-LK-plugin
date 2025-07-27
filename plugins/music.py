@@ -13,7 +13,7 @@ from ATRI.message import MessageBuilder
 plugin = Service(
     "点歌",
     "点歌插件",
-    '0.2.0',
+    '0.2.1',
     Service.ServiceType.ENTERTAINMENT
 )
 
@@ -31,12 +31,12 @@ async def _(msg: Message = Arg("song_name")):
     song_name = msg.extract_plain_text()
     song_id = await get_song_id(song_name)
     if not song_id:
-        await dian_ge.send(f"没有找到名为{song_name}歌！")
+        await dian_ge.finish(f"没有找到名为 {song_name} 的歌！")
     try:
-        await dian_ge.send(MessageSegment.music("163", song_id))
+        await dian_ge.finish(MessageSegment.music("163", song_id))
     except Exception:
         messages = MessageBuilder()
-        info = await get_song_info(1487339803)
+        info = await get_song_info(song_id)
         info = info['songs'][0]
         artists = []
         for artist in info['artists']:
@@ -46,7 +46,7 @@ async def _(msg: Message = Arg("song_name")):
         messages.text(f"歌手:{','.join(artists)}")
         messages.text(f'专辑:{info['album']['name']}')
         messages.text(f"https://music.163.com/#/song?id={song_id}")
-        await dian_ge.send(messages)
+        await dian_ge.finish(messages)
 
 
 async def search_song(song_name: str):
@@ -64,6 +64,6 @@ async def get_song_id(song_name: str) -> int:
     return 0
 
 
-async def get_song_info(songId: int):
-    r = await request.post(f"http://music.163.com/api/song/detail/?id={songId}&ids=%5B{songId}%5D")
+async def get_song_info(song_id: int):
+    r = await request.post(f"http://music.163.com/api/song/detail/?id={song_id}&ids=%5B{song_id}%5D")
     return None if r.status_code != 200 else json.loads(r.text)
