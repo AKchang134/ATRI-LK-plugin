@@ -158,7 +158,7 @@
     "点歌": {
         "path": "plugins.music",
         "docs": "点歌插件",
-        "version": "0.2.1",
+        "version": "0.2.2",
         "author": "l_o_o_k",
         "is_dir": false
     }
