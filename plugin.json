@@ -106,8 +106,8 @@
     },
     "每日新闻": {
         "path": "plugins.dailynews",
-        "docs": "订阅每日新闻服务",
-        "version": "1.4.1",
+        "docs": "每日新闻订阅服务",
+        "version": "1.5.0",
         "author": "l_o_o_k",
         "is_dir": false
     },
