@@ -37,7 +37,7 @@
     "拍立得": {
         "path": "plugins.polaroid",
         "docs": "根据头像生成拍立得风格照片！",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "author": "Kyomotoi",
         "is_dir": true
     },
@@ -72,7 +72,7 @@
     "组队插件": {
         "path": "plugins.team",
         "docs": "l_o_o_k的组队插件",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "author": "l_o_o_k",
         "is_dir": true
     },
@@ -86,7 +86,7 @@
     "小工具": {
         "path": "plugins.util",
         "docs": "非常实用(?)的工具们!",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "author": "Kyomotoi",
         "is_dir": true
     },

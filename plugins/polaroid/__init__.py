@@ -9,7 +9,7 @@ from ATRI.service import Service
 from .data_source import Polaroid, TEMP_PATH
 
 plugin = Service("拍立得").document("根据头像生成拍立得风格照片！").type(Service.ServiceType.ENTERTAINMENT).version(
-    "1.0.0")
+    "1.0.1")
 pol = Polaroid()
 
 _flmt_notice = choice(["慢...慢一..点❤", "冷静1下", "歇会歇会~~"])

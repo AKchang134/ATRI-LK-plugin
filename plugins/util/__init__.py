@@ -10,7 +10,7 @@ from ATRI.service import Service
 
 from .data_source import Encrypt, Yinglish, roll_dice
 
-plugin = Service("").document("非常实用(?)的工具们!").type(Service.ServiceType.ENTERTAINMENT).version("1.0.0")
+plugin = Service("小工具").document("非常实用(?)的工具们!").type(Service.ServiceType.ENTERTAINMENT).version("1.0.1")
 
 roll = plugin.on_command("/roll", "骰子~用法: 1d10 或 2d10+2d10+more")
 
