@@ -66,7 +66,7 @@
         "path": "plugins.setu",
         "docs": "hso!",
         "version": "1.1.2",
-        "author": "Kyomotoi, l_o_o_k",
+        "author": "Kyomotoi,l_o_o_k",
         "is_dir": true
     },
     "组队插件": {
@@ -161,5 +161,11 @@
         "version": "0.2.2",
         "author": "l_o_o_k",
         "is_dir": false
+    },
+    "HelloWorld": {
+        "repo": "https://github.com/lokyoh/atrilk_plugin_helloworld",
+        "docs": "一个ATRI-LK插件示例模板。",
+        "version": "github",
+        "author": "l_o_o_k"
     }
 }
