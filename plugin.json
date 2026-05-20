@@ -167,5 +167,12 @@
         "docs": "一个ATRI-LK插件示例模板。",
         "version": "github",
         "author": "l_o_o_k"
+    },
+    "Manage-Extra": {
+        "path": "plugins.manage_extra",
+        "docs": "管理功能扩展插件，添加了更多群管相关功能。使用时请阅读 README.md。",
+        "version": "1.0.0",
+        "author": "akCS(AKchang134)",
+        "is_dir": true
     }
 }
