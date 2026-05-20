@@ -21,6 +21,7 @@ from .specperm import SPECPERM
 from .config import config
 
 
+
 plugin = Service(
     "Manage-Extra",
     "管理功能扩展. 请根据需要调整执行命令所需的权限等级. ",
@@ -29,6 +30,9 @@ plugin = Service(
 )
 
 _lmt_notice = ["慢...慢一..点❤", "冷静1下", "歇会歇会~~", "呜呜...别急", "太快了...受不了", "不要这么快呀"]
+
+
+
 
 
 
